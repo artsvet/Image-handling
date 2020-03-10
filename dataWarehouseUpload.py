@@ -221,7 +221,7 @@ def doUpload(working_csv, data_set):
                 continue
             expanded_files = makeFileList(src_file)
             if expanded_files:
-            uploadList(curr_data_dir, src_file, dest_name)
+                uploadList(curr_data_dir, src_file, dest_name)
 
 def main():
     '''
