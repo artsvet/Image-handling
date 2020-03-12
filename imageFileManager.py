@@ -262,7 +262,7 @@ def parseArguments():
     parser.add_argument('-cn', '--change_name',
                         help='set to rename found files to sparc format',
                         action="store_true")
-    parser.add_argument('-mf', '--metadata_file', type=str
+    parser.add_argument('-mf', '--metadata_file', type=str,
                         help='set with valid file path to write metadata')
     parser.add_argument('-tag', '--write_tags',
                         help='set to write metadata to files in xmp namespace',
