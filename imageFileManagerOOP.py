@@ -91,27 +91,8 @@ class SparcImage:
             self.get_filetype()
             )
         return sparc_path
-
-class UserSyntax(ScopeSyntax):
-    def __init__(self, file_path):
-        super().__init__(self)
-        self.file_path = file_path
-
-    def user_format(self):
-        if '5ht/' in self.file_path:
-            return Ht(self.file_path)
-        if '5ht7' in self.file_path:
-            return Ht7(self.file_path)
-        if '5ht2a' in self.file_path:
-            return Ht2a(self.file_path)
-        if '5ht2b' in self.file_path:
-            return Ht2b(self.file_path)
-        if 'a2a' in self.file_path:
-            return a2a(self.file_path)
-    
-    def get_specimen(self):
-        return 'phrenic'
-
+   
+   
 class ScopeSyntax:
     def __init__(self, file_path):
         self.file_path = file_path
@@ -135,7 +116,29 @@ class ScopeSyntax:
             return channel
         else:
             return 'overlay'
+         
+         
+class UserSyntax(ScopeSyntax):
+    def __init__(self, file_path):
+        super().__init__(self)
+        self.file_path = file_path
 
+    def user_format(self):
+        if '5ht/' in self.file_path:
+            return Ht(self.file_path)
+        if '5ht7' in self.file_path:
+            return Ht7(self.file_path)
+        if '5ht2a' in self.file_path:
+            return Ht2a(self.file_path)
+        if '5ht2b' in self.file_path:
+            return Ht2b(self.file_path)
+        if 'a2a' in self.file_path:
+            return a2a(self.file_path)
+    
+    def get_specimen(self):
+        return 'phrenic'
+
+   
 class Ht(UserSyntax, SparcImage):
     def __init__(self):
         super().__init__(self)
@@ -176,6 +179,7 @@ class Ht(UserSyntax, SparcImage):
             stain = stains[int(self.get_channel()) - 1]
             return stain
 
+         
 class Ht2a(UserSyntax, SparcImage):
     def __init__(self):
         super().__init__(self)
@@ -201,6 +205,7 @@ class Ht2a(UserSyntax, SparcImage):
             stain = stains[int(self.get_channel()) - 1]
             return stain
 
+         
 class Ht2b(UserSyntax, SparcImage):
     def __init__(self):
        super().__init__(self)
@@ -226,6 +231,7 @@ class Ht2b(UserSyntax, SparcImage):
             stain = stains[int(self.get_channel()) - 1]
             return stain
 
+         
 class Ht7(UserSyntax, SparcImage):
     def __init__(self):
         super().__init__(self)
@@ -251,6 +257,7 @@ class Ht7(UserSyntax, SparcImage):
             stain = stains[int(self.get_channel()) - 1]
             return stain
 
+         
 class A2a(UserSyntax, SparcImage):
     def __init__(self):
         super().__init__(self)
