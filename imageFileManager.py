@@ -96,9 +96,9 @@ def getSampleMetadata(file_path):
                 subject_id = file_path.split('/')[-1].split('_')[0].split()[2]
             if magnification == '2x':
                 laterality = 'whole'
-            elif lower(file_path.split('/')[-1].split('_')[-3]) in ['il', 'l', 'lft']:
+            elif file_path.split('/')[-1].split('_')[-3].lower() in ['il', 'l', 'lft']:
                 laterality = 'left'
-            elif lower(file_path.split('/')[-1].split('_')[-3]) in ['r', 'cl', 'rt']:
+            elif file_path.split('/')[-1].split('_')[-3].lower() in ['r', 'cl', 'rt']:
                 laterality = 'right'
             else:
                 laterality = None
@@ -116,7 +116,7 @@ def getSampleMetadata(file_path):
 
         specimen = 'phrenic'
         if  'channel' not in locals():
-            channel = lower(file_path.split('/')[-1][-7:-4])
+            channel = file_path.split('/')[-1][-7:-4].lower()
         if channel == 'ch1':
             stain = stain_1
             stain_2 = None
@@ -124,8 +124,8 @@ def getSampleMetadata(file_path):
             channel = 'overlay'
             stain = stain_1 + '+' + stain_2
         if  'z_stack' not in locals():
-            z_stack = lower(file_path.split('/')[-1].split('_')[-1])
-        if 'z0' not in lower(z_stack):
+            z_stack = file_path.split('/')[-1].split('_')[-1].lower()
+        if 'z0' not in z_stack.lower():
             z_stack = None
 
         timestamp = str(
@@ -256,7 +256,7 @@ def parseArguments():
 
     parser = argparse.ArgumentParser(description='Provide directory path to'
     'walk and optionally write metadata, change names, or tag files.')
-    parser.add_argument('-wd', '--working_dir', type=str, default=getcwd()
+    parser.add_argument('-wd', '--working_dir', type=str, default=getcwd(),
                         help='set directory path to parse for files, defaults '
                         'to current working directory.')
     parser.add_argument('-cn', '--change_name',
