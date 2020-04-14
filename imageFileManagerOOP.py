@@ -206,7 +206,7 @@ class PathFormatFactory:
             return self.image_path
 
 
-class Ht(SparcImage):
+class Ht(ImagePath, SparcImage):
     '''
     Subclass of Sparc Image with format
     specific metadata interface
@@ -248,7 +248,7 @@ class Ht(SparcImage):
             return stain
 
 
-class Ht2a(SparcImage):
+class Ht2a(ImagePath, SparcImage):
     '''
     Subclass of Sparc Image with format
     specific metadata interface
@@ -278,7 +278,7 @@ class Ht2a(SparcImage):
             return stain
 
 
-class Ht2b(SparcImage):
+class Ht2b(ImagePath, SparcImage):
     '''
     Subclass of Sparc Image with format
     specific metadata interface
@@ -307,7 +307,7 @@ class Ht2b(SparcImage):
             return stain
 
 
-class Ht7(SparcImage):
+class Ht7(ImagePath, SparcImage):
     '''
     Subclass of Sparc Image with format
     specific metadata interface
@@ -336,7 +336,7 @@ class Ht7(SparcImage):
             return stain
 
 
-class A2a(SparcImage):
+class A2a(ImagePath, SparcImage):
     '''
     Subclass of Sparc Image with format
     specific metadata interface
