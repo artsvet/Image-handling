@@ -7,7 +7,9 @@ import pathlib
 import collections
 import datetime
 import pandas as pd
-
+import sys
+from blackfynn import Blackfynn, Settings
+from blackfynn.models import Collection
 
 class ImagePath(type(pathlib.Path())):
     '''
@@ -34,8 +36,9 @@ class ImagePath(type(pathlib.Path())):
 class SparcImage(ImagePath):
     '''
     Image class for standard Sparc data format
-    Provides interface to read metadata
-    or modify original path
+    Provides interface to read metadata or modify original path.
+    Is uploaded to Blackfynn data warehouse
+    by passing to BlackfynnUploader.upload_file(SparcImage)
     '''
 
     def __init__(self, file_path):
@@ -121,8 +124,8 @@ class SparcImage(ImagePath):
 
     def write_xmp(self):
         '''
-        Labels image files with metadata values as XMP property tags,
-        searchable in windows explorer.
+        Labels image files with metadata values as
+        XMP property tags searchable in windows explorer.
         '''
         if self.exists():
 
@@ -138,7 +141,12 @@ class SparcImage(ImagePath):
             pass
 
     def rename_to_sparc(self):
-        if self.exits():
+        '''
+        Renames file at Path
+        to Sparc conforming file name
+        '''
+
+        if self.exists():
             try:
                 return SparcImage(self.rename(self.get_sparc_path().name))
 
@@ -148,6 +156,11 @@ class SparcImage(ImagePath):
             print(str(self) + ' is not a real file')
 
     def write_sparc_path(self, write_to):
+        '''
+        Replaces Path with Sparc conforming file and
+        directory path originating at write_to,
+        writes at Path with replacement
+        '''
 
         if self.exists():
             new_path = write_to.joinpath(self.get_sparc_path())
@@ -155,32 +168,38 @@ class SparcImage(ImagePath):
                 return SparcImage(self.replace(new_path))
 
             except Exception as ex:
-                print('Rename error for {}.\n{}'.format(self, new_path))
+                print('Replacement error for {}.\n{}'.format(self, new_path))
         else:
             print(str(self) + ' is not a real file')
 
     def write_sparc_dir(self, write_to):
+        '''
+        Writes Sparc conforming directory hierarchy
+        originating at write_to
+        '''
 
-        if self.exists():
-            new_path = write_to.joinpath(self.get_sparc_path())
-            try:
-                return new_path.parent.mkDir(parents=True, exist_ok=True)
+        new_path = write_to.joinpath(self.get_sparc_path())
+        try:
+            return new_path.parent.mkDir(parents=True, exist_ok=True)
 
-            except Exception as ex:
-                print('Cannot make directory for {}.\n{}'.format(self, new_path))
-        else:
-            print(str(self) + ' is not a real file')
+        except Exception as ex:
+            print('Cannot make Sparc directories for {}.\n{}'.format(self, new_path))
+
 
     def metadata_to_df(self):
+        '''
+        Returns Sparc metadata for Path as a pandas Series
+        '''
         return pd.Series(self.get_metadata_dict())
 
 
 class PathFormatFactory:
-
     '''
     Factory for generating correct Sparc Image
-    subclass from base Image Path
+    subclass from base Image Path by checking
+    user-generated Path labels
     '''
+
     def __init__(self, image_path):
         self.image_path = image_path
 
@@ -366,6 +385,13 @@ class A2a(ImagePath, SparcImage):
 
 
 class BlackfynnUploader:
+    '''
+    Blackfynn data warehouse interface.
+    Initializes using local user profile and
+    attempts connection to destination dataset_name.
+    Checks/creates Sparc conforming collections
+    and uploads file passed to upload_file(to_upload)
+    '''
 
     def __init__(self, dataset_name):
         self.dataset_name = dataset_name
@@ -460,19 +486,25 @@ class BlackfynnUploader:
         return False
 
     def upload_file(self, to_upload):
-        collection = self.dataset
-        print('Uploading {} to {}.'.format(
-            to_upload.name, to_upload.get_sparc_path()))
 
-        if self.check_collection(collection, to_upload):
-            print('File {} already uploaded to {}.'.format(
-                to_upload.name, to_upload.get_sparc_path()
+        if to_upload.exists():
+
+            collection = self.dataset
+            print('Uploading {} to {}.'.format(
+                to_upload.name, to_upload.get_sparc_path()))
+
+            if self.check_collection(collection, to_upload):
+                print('File {} already uploaded to {}.'.format(
+                    to_upload.name, to_upload.get_sparc_path()
                 ))
 
+            else:
+                try:
+                    collection = self.make_collection(collection, to_upload)
+                    collection.upload(to_upload, display_progress=True)
+                except Exception as ex:
+                    print('Error uploading {}.  {}'.format(path.name, str(ex)))
+                    continue
+
         else:
-            try:
-                collection = self.make_collection(collection, to_upload)
-                collection.upload(to_upload, display_progress=True)
-            except Exception as ex:
-                print('Error uploading {}.  {}'.format(path.name, str(ex)))
-                continue
+            print('Error uploading {}. File does not exist.'.format(path.name))
