@@ -364,3 +364,115 @@ class A2a(ImagePath, SparcImage):
             stain = stains[int(self.get_channel()) - 1]
             return stain
 
+
+class BlackfynnUploader:
+
+    def __init__(self, dataset_name):
+        self.dataset_name = dataset_name
+        self.working_profile = self.get_profile()
+        self.dataset = self.connect()
+
+    def get_profile(self):
+        '''
+        Scans local Blackfynn API config, shows profiles, pick one.
+        '''
+        settings = Settings()
+        list_profile = []
+        print()
+        print('Select a Blackfynn profile')
+        for section in settings.config.sections():
+            if section not in ['global']:
+                list_profile.append(section)
+        if list_profile:
+            choice = 1
+            for prof in list_profile:
+                print('   ', choice, prof)
+                choice += 1
+            working_profile = input('Select profile:')
+            if working_profile.isnumeric():
+                offset = int(working_profile) - 1
+                if offset >= 0 and offset < len(list_profile):
+                    working_profile = list_profile[offset]
+                else:
+                    working_profile = ''
+        else:
+            print('No profiles found, create Blackfynn API profile first.')
+            sys.exit()
+        return working_profile
+
+    def connect(self):
+        '''
+        Prompts for csv file with info we need to upload.
+        Checks if files to upload exist.
+        Connects to Blackfynn API and activates top level dataset destination.
+        Returns csv file name, destination dataset.
+        '''
+        try:
+            b_fynn = Blackfynn(self.working_profile)
+        except Exception as ex:
+            sys.exit('Error Connecting to ' + 'Blackfynn. ' + str(ex))
+
+        try:
+            print("Trying to connect to dataset.", flush=True)
+            dataset = b_fynn.get_dataset(self.dataset_name)
+        except Exception as ex:
+            sys.exit('Unable to connect to the dataset.' + str(ex))
+
+        print()
+        print('Dataset:  {}\nProfile:  {}'.format(
+            data_set, self.working_profile))
+
+        prompt = input('Continue with upload (y/n)? ')
+        if prompt != 'y':
+            sys.exit('Aborting upload.')
+        return dataset
+
+    def make_collection(self, collection, to_upload):
+        '''
+        Finds or creates one or more collections in a collection hierarchy
+        and returns the lowest collection.
+        '''
+        for level in to_upload.parents:
+            for curr_coll in collection.items:
+                if curr_coll.name == level:
+                    break
+            else:
+                print('Creating', level, ' in', collection.name)
+                curr_coll = collection.create_collection(level)
+            collection = curr_coll  # step down into new collection
+        return curr_coll
+
+    def check_collection(self, collection, to_upload):
+        '''
+        Checks to see if the source file name exists in the current collection.
+        Drills down into collection to find file.
+        '''
+        for item in collection:
+            if isinstance(item, Collection):
+                continue
+            true_names = item.sources
+            for lookup in true_names:
+                real_file = os.path.basename(lookup.s3_key)
+                if not real_file:
+                    print('List of sources empty')
+                if real_file == to_upload.name:
+                    return True
+        return False
+
+    def upload_file(self, to_upload):
+        collection = self.dataset
+        print('Uploading {} to {}.'.format(
+            to_upload.name, to_upload.get_sparc_path()))
+
+        if self.check_collection(collection, to_upload):
+            print('File {} already uploaded to {}.'.format(
+                to_upload.name, to_upload.get_sparc_path()
+                ))
+
+        else:
+            try:
+                collection = self.make_collection(collection, to_upload)
+                collection.upload(to_upload, display_progress=True)
+            except Exception as ex:
+                print('Error uploading {}.  {}'.format(path.name, str(ex)))
+                continue
