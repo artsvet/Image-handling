@@ -1,4 +1,4 @@
-# SPARC-image-handling
+# SPARC data management
 Applications for managing National Institute of Health SPARC program data and interfacing with Blackfynn data warehouse
 
 Initially, imageFileManager.py application was written to format large local repository of image research data by overdue data compliance milestone. See SPARC-BIDS data formatting standard
