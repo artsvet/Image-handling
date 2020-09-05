@@ -76,46 +76,52 @@ class SparcImage(ImagePath):
             return ''
 
     def get_creation_date(self):
+
         if os.path.isfile(self):
             return str(
                 datetime.date.fromtimestamp(
                     os.path.getmtime(
                         self
-                    )))
+                    )
+                )
+            )
         else:
             print(str(self) + ' is not a real file')
             return ''
 
-    def get_sparc_path(self):
-        if self.get_zstack():
+    def get_sparc_path(self, sparc_dict):
+
+        if sparc_dict['z_stack']:
             sparc_path = 'samples/sample-{0}/specimen-{1}/laterality-{2}/' \
                          'stain-{3}/section-{4}/magnification-{5}/' \
                          'sam-{0}_spec-{1}_lat-{2}_stain-{3}_sec-{4}_mag-{5}_z-{6}{7}'.format(
-                self.get_sample_id(), self.get_specimen(), self.get_laterality(),
-                self.get_stain(), self.get_section(), self.get_magnification(),
-                self.get_zstack(), self.suffix
+                sparc_dict['sample_id'], sparc_dict['specimen'], sparc_dict['laterality'],
+                sparc_dict['stain'], sparc_dict['section'], sparc_dict['magnification'],
+                sparc_dict['z_stack'], sparc_dict['suffix']
             )
+
+
         else:
             sparc_path = 'samples/sample-{0}/specimen-{1}/laterality-{2}/' \
                          'stain-{3}/section-{4}/magnification-{5}/' \
                          'sam-{0}_spec-{1}_lat-{2}_stain-{3}_sec-{4}_mag-{5}{6}'.format(
-                self.get_sample_id(), self.get_specimen(), self.get_laterality(),
-                self.get_stain(), self.get_section(), self.get_magnification(),
-                self.suffix
+                sparc_dict['sample_id'], sparc_dict['specimen'], sparc_dict['laterality'],
+                sparc_dict['stain'], sparc_dict['section'], sparc_dict['magnification'],
+                sparc_dict['suffix']
             )
         return SparcImage(sparc_path)
 
-    def get_metadata_dict(self):
+    def get_sparc_dict(self):
 
-        metadata = [self.get_sample_id(), self.get_specimen(), self.get_laterality(),
-              self.get_stain(), self.get_section(), self.get_magnification(),
-              self.get_zstack(), str(self.get_sparc_path())
-              ]
+        metadata = [
+            self.get_sample_id(), self.get_specimen(), self.get_laterality(),
+            self.get_stain(), self.get_section(), self.get_magnification(),
+            self.get_zstack(), self.suffix
+        ]
 
         labels = [
             'sample_id', 'specimen', 'laterality', 'stain',
-            'section', 'magnification', 'z_stack', 'sparc_path'
-
+            'section', 'magnification', 'z_stack', 'suffix'
         ]
 
         if metadata:
@@ -131,10 +137,7 @@ class SparcImage(ImagePath):
 
             metadata = pyexiv2.ImageMetadata(self)
             metadata.read()
-            metadata['Xmp.dc.subject'] = [self.get_sample_id(), self.get_specimen(),
-                                          self.get_laterality(), self.get_stain(),
-                                          self.get_section(), self.get_magnification(),
-                                          self.get_zstack(), self.get_filetype()]
+            metadata['Xmp.dc.subject'] = list(self.get_sparc_dict().values())
             metadata.write()
         else:
             print(str(self) + ' is not a real file')
@@ -148,7 +151,13 @@ class SparcImage(ImagePath):
 
         if self.exists():
             try:
-                return SparcImage(self.rename(self.get_sparc_path().name))
+                return SparcImage(
+                    self.rename(
+                        self.get_sparc_path(
+                            self.get_sparc_dict()
+                        ).name
+                    )
+                )
 
             except Exception as ex:
                 print('Rename error for {}.\n{}'.format(self, new_path))
@@ -163,7 +172,12 @@ class SparcImage(ImagePath):
         '''
 
         if self.exists():
-            new_path = write_to.joinpath(self.get_sparc_path())
+            new_path = write_to.joinpath(
+                self.get_sparc_path(
+                    self.get_sparc_dict()
+                )
+            )
+
             try:
                 return SparcImage(self.replace(new_path))
 
@@ -178,7 +192,11 @@ class SparcImage(ImagePath):
         originating at write_to
         '''
 
-        new_path = write_to.joinpath(self.get_sparc_path())
+        new_path = write_to.joinpath(
+            self.get_sparc_path(
+                self.get_sparc_dict()
+            )
+        )
         try:
             return new_path.parent.mkDir(parents=True, exist_ok=True)
 
@@ -186,11 +204,11 @@ class SparcImage(ImagePath):
             print('Cannot make Sparc directories for {}.\n{}'.format(self, new_path))
 
 
-    def metadata_to_df(self):
+    def metadata_to_series(self):
         '''
         Returns Sparc metadata for Path as a pandas Series
         '''
-        return pd.Series(self.get_metadata_dict())
+        return pd.Series(self.get_sparc_dict())
 
 
 class PathFormatFactory:
@@ -490,13 +508,23 @@ class BlackfynnUploader:
         if to_upload.exists():
 
             collection = self.dataset
-            print('Uploading {} to {}.'.format(
-                to_upload.name, to_upload.get_sparc_path()))
+            print(
+                'Uploading {} to {}.'.format(
+                    to_upload.name, to_upload.get_sparc_path(
+                        self.get_sparc_dict()
+                    )
+                )
+            )
+
 
             if self.check_collection(collection, to_upload):
-                print('File {} already uploaded to {}.'.format(
-                    to_upload.name, to_upload.get_sparc_path()
-                ))
+                print(
+                    'File {} already uploaded to {}.'.format(
+                    to_upload.name, to_upload.get_sparc_path(
+                        self.get_sparc_dict()
+                    )
+                )
+            )
 
             else:
                 try:
