@@ -9,7 +9,8 @@ import datetime
 import pandas as pd
 import sys
 from blackfynn import Blackfynn, Settings
-from blackfynn.models import Collection
+from blackfynn.models import Collection'
+
 
 class ImagePath(type(pathlib.Path())):
     '''
@@ -41,8 +42,8 @@ class SparcImage(ImagePath):
     by passing to BlackfynnUploader.upload_file(SparcImage)
     '''
 
-    def __init__(self, file_path):
-        self.file_path = file_path
+    def __init__(self, image_path):
+        super().__init__(image_path)
 
     def get_base_comp(self):
         sparc_pattern = re.compile(r"[^_]*-[^_.]*", re.IGNORECASE)
@@ -89,8 +90,8 @@ class SparcImage(ImagePath):
             print(str(self) + ' is not a real file')
             return ''
 
-    def get_sparc_path(self, sparc_dict):
-
+    def get_sparc_path(self):
+        sparc_dict = self.get_sparc_dict()
         if sparc_dict['z_stack']:
             sparc_path = 'samples/sample-{0}/specimen-{1}/laterality-{2}/' \
                          'stain-{3}/section-{4}/magnification-{5}/' \
@@ -153,9 +154,7 @@ class SparcImage(ImagePath):
             try:
                 return SparcImage(
                     self.rename(
-                        self.get_sparc_path(
-                            self.get_sparc_dict()
-                        ).name
+                        self.get_sparc_path().name
                     )
                 )
 
@@ -193,9 +192,7 @@ class SparcImage(ImagePath):
         '''
 
         new_path = write_to.joinpath(
-            self.get_sparc_path(
-                self.get_sparc_dict()
-            )
+            self.get_sparc_path()
         )
         try:
             return new_path.parent.mkDir(parents=True, exist_ok=True)
@@ -219,7 +216,7 @@ class PathFormatFactory:
     '''
 
     def __init__(self, image_path):
-        self.image_path = image_path
+        self.image_path = image_path.__str__()
 
     def is_sparcy(self):
         sparc_pattern = re.compile(r"sam-\d+_\w+-\w+", re.IGNORECASE)
@@ -243,14 +240,14 @@ class PathFormatFactory:
             return self.image_path
 
 
-class Ht(ImagePath, SparcImage):
+class Ht(SparcImage):
     '''
     Subclass of Sparc Image with format
     specific metadata interface
     '''
 
     def __init__(self, image_path):
-        self.image_path = image_path
+        super().__init__(image_path)
 
     def get_sample_id(self):
         return self.get_base_comp()[0]
@@ -285,14 +282,14 @@ class Ht(ImagePath, SparcImage):
             return stain
 
 
-class Ht2a(ImagePath, SparcImage):
+class Ht2a(SparcImage):
     '''
     Subclass of Sparc Image with format
     specific metadata interface
     '''
 
-    def __init__(self, file_path):
-        self.file_path = file_path
+    def __init__(self, image_path):
+        super().__init__(image_path)
 
     def get_sample_id(self):
         return self.parts[-3]
@@ -315,13 +312,13 @@ class Ht2a(ImagePath, SparcImage):
             return stain
 
 
-class Ht2b(ImagePath, SparcImage):
+class Ht2b(SparcImage):
     '''
     Subclass of Sparc Image with format
     specific metadata interface
     '''
     def __init__(self, image_path):
-        self.image_path = image_path
+        super().__init__(image_path)
 
     def get_sample_id(self):
         return self.parts[-3]
@@ -344,13 +341,13 @@ class Ht2b(ImagePath, SparcImage):
             return stain
 
 
-class Ht7(ImagePath, SparcImage):
+class Ht7(SparcImage):
     '''
     Subclass of Sparc Image with format
     specific metadata interface
     '''
     def __init__(self, image_path):
-        self.image_path = image_path
+        super().__init__(image_path)
 
     def get_sample_id(self):
         return self.parts[-3]
@@ -373,13 +370,13 @@ class Ht7(ImagePath, SparcImage):
             return stain
 
 
-class A2a(ImagePath, SparcImage):
+class A2a(SparcImage):
     '''
     Subclass of Sparc Image with format
     specific metadata interface
     '''
     def __init__(self, image_path):
-        self.image_path = image_path
+        super().__init__(image_path)
 
     def get_sample_id(self):
         return self.get_base_comp()[2]
@@ -532,7 +529,7 @@ class BlackfynnUploader:
                     collection.upload(to_upload, display_progress=True)
                 except Exception as ex:
                     print('Error uploading {}.  {}'.format(path.name, str(ex)))
-                    continue
+                    pass
 
         else:
             print('Error uploading {}. File does not exist.'.format(path.name))
