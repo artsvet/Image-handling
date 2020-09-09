@@ -9,7 +9,7 @@ import datetime
 import pandas as pd
 import sys
 from blackfynn import Blackfynn, Settings
-from blackfynn.models import Collection'
+from blackfynn.models import Collection
 
 
 class ImagePath(type(pathlib.Path())):
